@@ -1,0 +1,20 @@
+#define COLOR_REGULAR 1
+#define COLOR_SUITE_BLACK 2
+#define COLOR_SUITE_RED 3
+#define COLOR_STOCK 4
+#define COLOR_STOCK_NONE 5
+#define COLOR_SOURCE 6
+#define COLOR_HIGHLIGHTED 7
+#define COLOR_SELECTED 8
+#define COLOR_DIALOG 9
+#define COLOR_DIALOG_SELECTED 10
+
+#define CHAR_SELECT "█"
+#define CHAR_HIGHLIGHT "▓"
+#define CHAR_NONE "░"
+#define CHAR_CARD_BORDER "█"
+#define CHAR_CARD_BORDER_BLANK "░"
+#define CHAR_CARD " "
+#define CHAR_CARD_BLANK "▞"
+#define CHAR_DIALOG_BORDER "█"
+#define CHAR_DIALOG " "
