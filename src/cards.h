@@ -51,7 +51,7 @@ void update_visible(Game *game);
 bool can_stack(Card card, Card above, bool is_foundation);
 void clear_highlight(Game *game);
 void highlight_source(Game *game);
-int highlight_stackable(Card *card, bool tableau, Game *game);
+int highlight_stackable(Card *card, bool tableau, Game *game, bool *only_foundation);
 Card *get_waste_top(Game *game, bool no_rank);
 Card *get_stock_top(Game *game, bool no_rank);
 Card *get_card(CardPos pos, Game *game, bool no_rank);
@@ -146,7 +146,7 @@ void update_display(Game *game) {
         if (!card) {
             game->moving.active = false;
         } else {
-            highlight_stackable(card, game->moving.location == TABLEAU, game);
+            highlight_stackable(card, game->moving.location == TABLEAU, game, NULL);
         }
     }
     highlight_source(game);
@@ -200,10 +200,12 @@ void highlight_source(Game *game) {
     card->highlight = SOURCE;
 }
 
-int highlight_stackable(Card *card, bool tableau, Game *game) {
+int highlight_stackable(Card *card, bool tableau, Game *game, bool *only_foundation) {
     // highlights cards that a card can be stacked on as "highlighted", which the action function uses
     clear_highlight(game);
     int count_stackable = 0;
+
+    bool only_foundation_ = false;
 
     // if we are on the tableau and the next card is not empty, don't highlight moving to foundation
     // we cannot move more than one card at a time to the foundation
@@ -211,8 +213,7 @@ int highlight_stackable(Card *card, bool tableau, Game *game) {
         for (int i = 0; i < 4; ++i) {
             bool stack = can_stack(*card, game->foundation[i], true);
             if (stack) {
-                // TODO: instantly move card to the foundation if only the foundation cards are highlighted and no other cards
-                // there is no need to select which foundation to move to
+                only_foundation_ = true;
                 ++count_stackable;
                 game->foundation[i].highlight = HIGHLIGHTED;
             }
@@ -226,11 +227,13 @@ int highlight_stackable(Card *card, bool tableau, Game *game) {
                     if (game->tableau[column][row - 1].visible) {
                         bool stack = can_stack(*card, game->tableau[column][row - 1], false);
                         if (stack) {
+                            only_foundation_ = false;
                             ++count_stackable;
                             game->tableau[column][row - 1].highlight = HIGHLIGHTED;
                         }
                     }
                 } else if (card->rank == KING) {
+                    only_foundation_ = false;
                     ++count_stackable;
                     game->tableau[column][row].highlight = HIGHLIGHTED;
                 }
@@ -239,6 +242,7 @@ int highlight_stackable(Card *card, bool tableau, Game *game) {
         }
     }
 
+    if (only_foundation) *only_foundation = only_foundation_;
     return count_stackable;
 }
 
@@ -535,12 +539,13 @@ bool handle_action(Action direction, Game *game) {
                             return move_card(game);
                         }
                     } else {
-                        int count = highlight_stackable(card, game->selected.location == TABLEAU, game);
+                        bool foundation = false;
+                        int count = highlight_stackable(card, game->selected.location == TABLEAU, game, &foundation);
                         if (count < 1) return false;
                         highlight_source(game);
                         game->moving = game->selected;
                         game->moving.active = true;
-                        if (count == 1) {
+                        if (count == 1 || foundation) {
                             for (int column = 0; column < 7; ++column) {
                                 for (int row = 0; row < 64; ++row) {
                                     if (game->tableau[column][row].highlight == HIGHLIGHTED) {
@@ -548,6 +553,12 @@ bool handle_action(Action direction, Game *game) {
                                         return move_card(game);
                                     }
                                     if (game->tableau[column][row].rank == NO_RANK) break;
+                                }
+                            }
+                            for (int x = 0; x < 4; ++x) {
+                                if (game->foundation[x].highlight == HIGHLIGHTED) {
+                                    game->selected = (CardPos) {true, FOUNDATION, x, 0};
+                                    return move_card(game);
                                 }
                             }
                         }

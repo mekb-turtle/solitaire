@@ -246,12 +246,12 @@ void render(Game *game) {
     for (int column = 0; column < 7; ++column) {
         bool prev_selected = false;
         for (int row = 0; row < 64; ++row) {
-            int x_ = column * 10 + 1, y_ = row * 3 + 10;
+            int x_ = column * 10 + 1, y_ = row * 2 + 10;
             if ((is_selected = (game->selected.location == TABLEAU && game->selected.column == column && game->selected.row == row))) {
                 selected_y_off = 0, selected_x = x_, selected_y = y_;
             } else if (row > 0 && game->tableau[column][row].rank != NO_RANK && prev_selected) {
                 // move cursor up a bit if there is a card in the way
-                selected_y_off = -1;
+                selected_y_off = -2;
             }
             render_card(game->tableau[column][row], (CardPos) { true, TABLEAU, column, row }, x_, y_, is_selected);
             prev_selected = is_selected;
